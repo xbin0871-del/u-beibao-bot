@@ -72,7 +72,6 @@ async def expire_job(app):
 
 def main():
     a = Application.builder().token(TOKEN).build()
-    a.job_queue.run_repeating(lambda c: expire_job(a), interval=600, first=10)
     a.add_handler(CommandHandler("start", start))
     a.add_handler(CommandHandler("deposit", deposit))
     a.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_msg))
