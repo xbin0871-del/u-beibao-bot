@@ -3,8 +3,8 @@ from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = os.getenv("TOKEN")
-ADMINS = [int(x) for x in os.getenv("ADMINS", "").split(",") if x]
+TOKEN = os.getenv("BOT_TOKEN")
+ADMINS = [int(x) for x in os.getenv("ADMIN_ID").split(",")]
 DATA_FILE = "data.json"
 EXPIRE_HOURS = 24
 
