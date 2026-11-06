@@ -1,6 +1,10 @@
 name: 报备推送
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -10,10 +14,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Install requests
-        run: pip install requests
+      - name: Install requirements
+        run: pip install -r requirements.txt
       - name: Run bot
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
-          TG_GROUP_ID: ${{ secrets.TG_GROUP_ID }}
-        run: python bot.py
+          TG_GROUP: ${{ secrets.TG_GROUP }}
+          SERPAPI_A: ${{ secrets.SERPAPI_A }}
+        run: python main.py
