@@ -1,34 +1,21 @@
-import os
-import requests
-from serpapi import GoogleSearch
+from flask import Flask, request
+import telebot # 或 python-telegram-bot
 
-TOKEN = os.getenv("TG_TOKEN")
-CHAT_ID = "-1004466833723"
-SERPAPI_KEY = os.getenv("SERPAPI_A")
+TOKEN = "你的Token"
+bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
-params = {"q": "芭提雅 海景 咖啡厅 推荐", "hl": "zh-tw", "gl": "th", "api_key": SERPAPI_KEY}
-res = GoogleSearch(params).get_dict()
-items = res.get("organic_results", [])
+@app.route('/', methods=['POST'])
+def webhook():
+    update = request.get_json()
+    bot.process_new_updates([telebot.types.Update.de_json(update)])
+    return 'ok', 200
 
-msg = "☕ 芭提雅海景咖啡厅推荐\n\n"
-for i, r in enumerate(items[:3], 1):
-    title = (r.get("title") or "").replace("<b>", "").replace("</b>", "")
-    snippet = (r.get("snippet") or "").replace("<b>", "").replace("</b>", "")
-    msg += f"{i}. {title}\n{snippet}\n{r.get('link')}\n\n"
+@app.route('/set', methods=['GET'])
+def set_webhook():
+    # 部署后访问一次 /set 完成绑定
+    bot.set_webhook(url="https://serp-worker.onrender.com")
+    return 'webhook set'
 
-buttons = {"inline_keyboard": [[
-    {"text": "👍 有用", "callback_data": "like"},
-    {"text": "👎 没用", "callback_data": "dislike"},
-    {"text": "🔗 更多", "url": "https://taotailailangblog.com/pattaya-photo-cafe001/"}
-]]}
-
-url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-r = requests.post(url, json={
-    "chat_id": CHAT_ID,
-    "text": msg,
-    "parse_mode": "HTML",
-    "reply_markup": buttons
-}, timeout=30)
-
-print("TG状态码:", r.status_code)
-print("TG返回:", r.text)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
