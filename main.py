@@ -1,21 +1,48 @@
+import os
+import requests
 from flask import Flask, request
-import telebot # 或 python-telegram-bot
 
-TOKEN = "你的Token"
-bot = telebot.TeleBot(TOKEN)
+TOKEN = os.getenv("TOKEN")
+TG = f"https://api.telegram.org/bot{TOKEN}"
 app = Flask(__name__)
 
-@app.route('/', methods=['POST'])
+def send(chat_id, text):
+    try:
+        requests.post(f"{TG}/sendMessage", json={"chat_id": chat_id, "text": text}, timeout=5)
+    except Exception as e:
+        print(f"Send error: {e}")
+
+@app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
-    update = request.get_json()
-    bot.process_new_updates([telebot.types.Update.de_json(update)])
-    return 'ok', 200
+    u = request.json
+    if not u:
+        return "ok"
+    
+    # 兼容所有更新类型，防止 KeyError 崩溃
+    msg = u.get("message") or u.get("edited_message") or u.get("channel_post")
+    
+    if msg:
+        chat_id = msg.get("chat", {}).get("id")
+        user = msg.get("from", {})
+        user_id = user.get("id")
+        text = msg.get("text", "").strip()
+        
+        if not chat_id:
+            return "ok"
+            
+        if text == "/start":
+            send(chat_id, "皇冠")
+        elif text == "/verify":
+            send(chat_id, "✅ 服务正常")
+        # 这里保留你原来的 @xxx 业务逻辑入口
+        elif text.startswith("@"):
+            send(chat_id, "已收到指令")
+            
+    return "ok"
 
-@app.route('/set', methods=['GET'])
-def set_webhook():
-    # 部署后访问一次 /set 完成绑定
-    bot.set_webhook(url="https://serp-worker.onrender.com")
-    return 'webhook set'
+@app.route("/", methods=["GET"])
+def index():
+    return "ok"
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
