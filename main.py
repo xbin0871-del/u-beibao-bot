@@ -1,44 +1,20 @@
-import os
-import requests
+import os, requests
 from flask import Flask, request
 
 TOKEN = os.getenv("TOKEN")
-TG = f"https://api.telegram.org/bot{TOKEN}"
+TG = "https://api.telegram.org/bot" + TOKEN
 app = Flask(__name__)
 
-def send(chat_id, text):
-    try:
-        requests.post(f"{TG}/sendMessage", json={"chat_id": chat_id, "text": text}, timeout=5)
-    except Exception as e:
-        print(f"Send error: {e}")
-
-@app.route(f"/{TOKEN}", methods=["POST"])
+@app.route("/" + TOKEN, methods=["POST"])
 def webhook():
-    u = request.json
-    if not u:
-        return "ok"
-    
-    # 兼容所有更新类型，防止 KeyError 崩溃
-    msg = u.get("message") or u.get("edited_message") or u.get("channel_post")
-    
-    if msg:
-        chat_id = msg.get("chat", {}).get("id")
-        user = msg.get("from", {})
-        user_id = user.get("id")
-        text = msg.get("text", "").strip()
-        
-        if not chat_id:
-            return "ok"
-            
-        if text == "/start":
-            send(chat_id, "皇冠")
-        elif text == "/verify":
-            send(chat_id, "✅ 服务正常")
-        # 这里保留你原来的 @xxx 业务逻辑入口
-        elif text.startswith("@"):
-            send(chat_id, "已收到指令")
-            
-    return "ok"
+    u = request.get_json(silent=True) or {}
+    m = u.get("message") or {}
+    c = m.get("chat", {})
+    cid = c.get("id")
+    txt = (m.get("text") or "").strip()
+    if cid and txt == "/verify":
+        requests.post(TG + "/sendMessage", json={"chat_id": cid, "text": "✅ 活了，开工"}, timeout=10)
+    return "ok", 200
 
 @app.route("/", methods=["GET"])
 def index():
